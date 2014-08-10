@@ -8,6 +8,10 @@ a {
   color: #93C39D;
 }
 
+label {
+  vertical-align: bottom;
+}
+
 .center {
   margin-left:auto;
   margin-right:auto;
@@ -38,7 +42,6 @@ a {
   padding-left: 6px;
   padding-right: 6px;
   border: 1px solid #ccc;
-  display: block
 }
 #submit{
   height: 50px;

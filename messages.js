@@ -1,6 +1,6 @@
 b = [
     {
-        "message": "Hey there, I'm your avatar! I work as a bricklayer and chicken farmer. I always need more feed for my chickens! Can you help me out with $3 of feed? Reply YES or NO",
+        "message": "Hey there, I'm your twinn! I work as a bricklayer and chicken farmer. I always need more feed for my chickens! Can you help me out with 75 rupesos ($3) of feed? Reply YES or NO",
         "YES": {
             "item": "CHICKEN_FEED",
             "cost": 3,
@@ -11,11 +11,11 @@ b = [
         }
     },
     {
-        "message": "Hey there, I'm your avatar! I work as a laborer in the city. I'm tired of walking there - it takes hours, think you can help me get a bus pass, it's just $5 more than what I have. Reply YES or NO",
+        "message": "Hey there, I'm your twinn! I work as a laborer in the city. I'm tired of walking 3 hours to get there, think you can help me get a bus pass, it's just  125 rupesos ($5) more than what I have. Reply YES or NO",
         "YES": {
             item: "BUS_PASS",
             cost: 5,
-            "message": "Thanks, riding the bus in style! http://goo.gl/p1BOhq 
+            "message": "Thanks, riding the bus in style! http://goo.gl/p1BOhq" 
         },
         "NO": {
             "message": "http://goo.gl/z9Cyz6" 
@@ -23,11 +23,11 @@ b = [
     },
     {
         
-        "message": "Hey there, it's me again! I almost have enough for a new bike. Can you help me out with the last $10? Reply YES or NO",
+        "message": "Hey there! I almost have enough for a new bike. Can you help me out with the last 250 rupesos ($10)? Reply YES or NO",
         "YES": {
             "item": "BIKE",
             "cost": 10,
-            "message": "Thank you, now my goats won't have to walk like common horses! http://goo.gl/kGPp5W 
+            "message": "Thank you, now my goats won't have to walk like common horses! http://goo.gl/kGPp5W" 
         },
         "NO": {
             "message": "http://goo.gl/JePNc6"
@@ -35,7 +35,7 @@ b = [
     },
     {
        
-        "message": "Hey there, it's me again! I'm tired of sleeping in the rain, thinking of buying a tent. Do you have $5 to help me get it? Reply YES or NO",
+        "message": "Hey there, it's me again! I'm tired of sleeping in the rain. Do you have 125 rupesos ($5) to help me get a tent? Reply YES or NO",
         "YES": {
              "item": "TENT",
         "cost": 5,
@@ -96,7 +96,7 @@ b = [
         "YES": {
             "item": "RADIO",
             "cost": 20,
-            "message": "Thankyou! Now, I can hear when it is safe to go back. And I'll dance in the meantime. http://goo.gl/MsnMjX"
+            "message": "Thank you! Now, I can hear when it is safe to go back. I'll dance in the meantime. https://www.youtube.com/watch?v=wXQUhX89vtQ"
         },
         "NO": {
             "message": "I'll have to listen in on my bunkmate's shitty old radio : /"
@@ -110,7 +110,7 @@ b = [
             "message": "Clean water! Finally! http://goo.gl/BxgwPB"
         },
         "NO": {
-            "message": "Perhaps you can help with some Chlorine pills, they're about $6. Reply YES or NO",
+            "message": "Perhaps you can help with some Iodine pills, they're about $6. Reply YES or NO",
             "YES": {
                 "item": "PILLS",
                 "cost": 6,

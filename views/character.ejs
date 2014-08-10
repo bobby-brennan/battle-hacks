@@ -63,6 +63,7 @@ body {
     text-align: center;
     vertical-align: middle;
     background: white;
+    cursor: pointer;
 }
 
 .icon img {
@@ -133,10 +134,17 @@ body {
   background: white;
   opacity: 1.0;
 }
+.justpurchased {
+    -webkit-transform: scale(5.0);
+   -webkit-transition-duration: 0.3s;
+    -webkit-transition-property: all;
+    -webkit-transition-timing-function: linear;
+    opacity: 0;
+    z-index: 10;
+}
 </style>
 <script>
 var purchasedItems = <%- items %>;
-// var affordableItems = <%- affordableItems %>;
 
 $(document).ready(function() {
 console.log("ready!");
@@ -160,18 +168,39 @@ $(".icon img").click(function(){console.log("c");});
 })
 
 var purchaseItem = function(elem, itemId) {
+  if ($(elem).hasClass('purchased')) { return; }
   $(elem).addClass('purchased');
   var xhr = new XMLHttpRequest();
   
   xhr.open("POST", "/penpal/purchaseItem");
-  savings -= parseInt($(elem).attr('data-cost'));
+  savings = savings - parseInt($(elem).attr('data-cost'));
+  document.getElementsByTagName('audio')[0].play();
+  $('span.savings').html(savings * 25 + ' rupesos ($' + savings + ')');
+  $(elem).addClass('justpurchased');
+  window.setTimeout(function()  { $(elem).removeClass('justpurchased'); }, 1000);
   // TODO(saurya): Re-mark everything that isn't affordable.
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send(JSON.stringify({
-    number: <%= number %>,
+    number: '<%= number %>',
     itemId: itemId
   }));
 }
+
+var sendDonation = function() {
+  console.log("donate!");
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/penpal/donate");
+  xhr.onreadystatechange = function() {
+    var newUrl = JSON.parse(xhr.responseText)["redirectUrl"];
+    console.log("redirecting:" + newUrl);
+    window.location.href = newUrl;
+  }
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(JSON.stringify({
+    number: '<%= number %>'
+  }));
+}
+
 var savings = <%= savings %>;
 
 </script>
@@ -190,89 +219,90 @@ var savings = <%= savings %>;
   </div>
 
   <div id="donate">
-  <button id="donate-button" onclick="window.location.href = https://api.venmo.com/v1/oauth/authorize?client_id=1878&scope=make_payments%20access_profile%20access_email%20access_phone%20access_balance&response_type=code">Donate!</button>
+  <button id="donate-button" onclick="sendDonation()">Donate</button>
   </div>
 </div>
 
 <div class="card">
     <div class="title">Transportation</div>
     <div class="icon_container">
-      <div class="icon" data-id="BUS_PASS"><img src="/penpal/res/transportation/busspass/icon.png"></div>
-      <div class="icon" data-id="BIKE"><img src="/penpal/res/transportation/bicycle/icon.png"></div>
-      <div class="icon" data-id="SCOOTER"><img src="/penpal/res/transportation/scooter/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="BUS_PASS"><img src="/penpal/res/transportation/busspass/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="BIKE"><img src="/penpal/res/transportation/bicycle/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="SCOOTER"><img src="/penpal/res/transportation/scooter/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Housing</div>
     <div class="icon_container">
-      <div class="icon" data-id="TENT"><img src="/penpal/res/housing/camp/icon.png"></div>
-      <div class="icon" data-id="ROOM"><img src="/penpal/res/housing/room/icon.png"></div>
-      <div class="icon" data-id="APARTMENT"><img src="/penpal/res/housing/apartment/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="TENT"><img src="/penpal/res/housing/camp/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="ROOM"><img src="/penpal/res/housing/room/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="APARTMENT"><img src="/penpal/res/housing/apartment/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Entertainment</div>
     <div class="icon_container">
-      <div class="icon" data-id="RADIO"><img src="/penpal/res/entertainment/radio/icon.png"></div>
-      <div class="icon" data-id="TV"><img src="/penpal/res/entertainment/tv/icon.png"></div>
-      <div class="icon" data-id="COMPUTER"><img src="/penpal/res/entertainment/computer/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="RADIO"><img src="/penpal/res/entertainment/radio/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="TV"><img src="/penpal/res/entertainment/tv/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="COMPUTER"><img src="/penpal/res/entertainment/computer/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Water and Sanitation</div>
     <div class="icon_container">
-    <div class="icon" data-id="WATER_BOTTLE"><img src="/penpal/res/water/bottle/icon.png"></div>
-    <div class="icon" data-id="WATER_BOILER"><img src="/penpal/res/water/hotwater/icon.png"></div>
-    <div class="icon" data-id="TOILET"><img src="/penpal/res/water/toilet/icon.png"></div>
+    <div class="icon" data-cost="8" data-id="WATER_BOTTLE"><img src="/penpal/res/water/bottle/icon.png"></div>
+    <div class="icon" data-cost="5" data-id="WATER_BOILER"><img src="/penpal/res/water/hotwater/icon.png"></div>
+    <div class="icon" data-cost="5" data-id="TOILET"><img src="/penpal/res/water/toilet/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Health</div>
     <div class="icon_container">
-      <div class="icon" data-id="DOCTOR"><img src="/penpal/res/medical/doctor/icon.png"></div>
-      <div class="icon" data-id="INSURANCE"><img src="/penpal/res/medical/insurance/icon.png"></div>
-      <div class="icon" data-id="PILLS"><img src="/penpal/res/medical/pills/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="DOCTOR"><img src="/penpal/res/medical/doctor/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="INSURANCE"><img src="/penpal/res/medical/insurance/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="PILLS"><img src="/penpal/res/medical/pills/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Education</div>
     <div class="icon_container">
-      <div class="icon" data-id="STATIONERY"><img src="/penpal/res/education/stationery/icon.png"></div>
-      <div class="icon" data-id="BOOKS"><img src="/penpal/res/education/books/icon.png"></div>
-      <div class="icon" data-id="TUITION"><img src="/penpal/res/education/tuition/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="STATIONERY"><img src="/penpal/res/education/stationery/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="BOOKS"><img src="/penpal/res/education/books/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="TUITION"><img src="/penpal/res/education/tuition/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Clothing</div>
     <div class="icon_container">
-      <div class="icon" data-id="SHIRT"><img src="/penpal/res/clothin/summer/icon.png"></div>
-      <div class="icon" data-id="COAT"><img src="/penpal/res/clothin/winter/icon.png"></div>
-      <div class="icon" data-id="RAIN"><img src="/penpal/res/clothin/rain/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="SHIRT"><img src="/penpal/res/clothin/summer/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="COAT"><img src="/penpal/res/clothin/winter/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="RAIN"><img src="/penpal/res/clothin/rain/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Toys</div>
     <div class="icon_container">
-      <div class="icon" data-id="FIGURE"><img src="/penpal/res/toys/figure/icon.png"></div>
-      <div class="icon" data-id="LEGO"><img src="/penpal/res/toys/lego/icon.png"></div>
-      <div class="icon" data-id="RC"><img src="/penpal/res/toys/rc/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="FIGURE"><img src="/penpal/res/toys/figure/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="LEGO"><img src="/penpal/res/toys/lego/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="RC"><img src="/penpal/res/toys/rc/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Work</div>
     <div class="icon_container">
-      <div class="icon" data-id="CHISEL"><img src="/penpal/res/work/chisel/icon.png"></div>
-      <div class="icon" data-id="DRILL"><img src="/penpal/res/work/drill/icon.png"></div>
-      <div class="icon" data-id="CHICKEN_FEED"><img src="/penpal/res/work/feed/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="CHISEL"><img src="/penpal/res/work/chisel/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="DRILL"><img src="/penpal/res/work/drill/icon.png"></div>
+      <div class="icon" data-cost="5" data-id="CHICKEN_FEED"><img src="/penpal/res/work/feed/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
+<audio src="res/sounds/buy.wav"></audio>
 </html>

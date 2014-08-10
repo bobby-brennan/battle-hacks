@@ -1,4 +1,5 @@
 var http = require("http");
+var https = require("https");
 var express = require('express');
 var mysql = require('mysql');
 var URL_PARSER = require('url');
@@ -16,17 +17,15 @@ var DATABASE = MYSQL.createConnection({
 });
 DATABASE.connect();
 
+var VENMO_AUTHORIZE_URL = "https://api.venmo.com/v1/oauth/authorize?client_id=1878&scope=make_payments%20access_profile%20access_email%20access_phone%20access_balance&response_type=code"
+var VENMO_CHARGE_URL = "https://www.organicparking.com/BattleHack/venmocharge.php?phonenumber=";
+
 var TWILIO_ID = "AC10a570344dac81f70d411dd590ac0e57";
 var TWILIO_TOKEN = "c27ad4d332c5e60c37ad93e673b93d9f";
 var TWILIO = require('twilio')(TWILIO_ID, TWILIO_TOKEN);
 
 var CMD_ELIZA = "eliza";
 var CMD_END_ELIZA = "stop eliza";
-
-var MSG_WELCOME = "Hi! I'm your new pen pal. What's your name?";
-var MSG_NAME_SET = "Great to meet you $USER! What do you want to call me?";
-var MSG_CHAR_NAME_SET = "Sounds good!";
-var MSG_ELIZA = "Eliza";
 
 var QUERY_CREATE_USER = "INSERT INTO users (phoneNumber, userState) VALUES (?, ?)";
 var QUERY_SET_NAME = "UPDATE users SET name=?, userState=? where phoneNumber=?";
@@ -37,6 +36,7 @@ var QUERY_GET_CHAR_DATA = "SELECT *, CURDATE() - lastUpdate as timeDiff FROM use
 var QUERY_UPDATE_TIME_SENSITIVE_DATA = "UPDATE users SET charSavings=?, charItems=?, lastUpdate=CURDATE()";
 var QUERY_SET_ITEMS = "UPDATE users SET charItems=? where phoneNumber=?";
 var QUERY_GET_ITEMS = "SELECT charItems FROM users where phoneNumber=?";
+var QUERY_GET_VENMO_TOKEN = "SELECT venmoToken FROM users where phoneNumber=?";
 
 var app = express();
 app.set('views', __dirname + '/views')
@@ -56,6 +56,19 @@ app.post("/initialize", function(req, res) {
   });
 });
 
+app.post("/donate", function(req, res) {
+  console.log("donate:" + req.body.number);
+  var number = sanitizePhoneNumber(req.body.number);
+  DATABASE.query(QUERY_GET_VENMO_TOKEN, [number], function(err, rows) {
+    var url = VENMO_AUTHORIZE_URL;
+    if (!err && rows.length === 1 && rows[0].venmoToken) {
+      url = VENMO_CHARGE_URL + number;
+    } else {
+    }
+    res.send(JSON.stringify({redirectUrl:url})); 
+  });
+});
+
 app.get("/incomingSms", function(req, res) {
   console.log("incoming:");
   var queryData = URL_PARSER.parse(req.url, true).query;
@@ -63,12 +76,12 @@ app.get("/incomingSms", function(req, res) {
 
   DATABASE.query(QUERY_LAST_PROMPT, [number], function(err, rows) {
     if (err || rows.length != 1) {
-      createUser(number);
+      createUser(number, function(){});
     } else {
       var next = CONVERSATION.getNextAction(JSON.parse(rows[0].userState), queryData.Body);
       console.log("next:" + next.message);
       if (next.cost) {
-        purchaseItem(next.item, next.cost);
+        purchaseItem(number, next.item, next.cost);
       }
       DATABASE.query(QUERY_SET_LAST_PROMPT, [JSON.stringify(next), number], function(err) {
         if (err) {
@@ -117,6 +130,11 @@ var purchaseItem = function(number, itemId) {
     DATABASE.query(QUERY_SET_ITEMS, [newItems, number], function (err) {
       if (err) {
         console.log("error setting items for:" + number + "  " + err);
+      } {
+        console.log("sending email");
+        https.get("https://www.organicparking.com/BattleHack/emailnews.php", function(res){
+          console.log("sent email:" + res.statusCode);
+        });
       }
     });
   });
@@ -165,13 +183,13 @@ var updateTimeSensitiveData = function(oldData, number) {
 
 var createUser = function(number, callback) {
   console.log("creating user:" + number);
-
-  DATABASE.query(QUERY_CREATE_USER, [number, MSG_WELCOME], function(err) {
+  var message = CONVERSATION.getNextAction({}, "");
+  DATABASE.query(QUERY_CREATE_USER, [number, JSON.stringify(message)], function(err) {
     if (err) {
       console.log("error:" + err);
       callback();
     } else {
-      sendMessage(MSG_WELCOME, number);
+      sendMessage(message.message, number);
       callback();
     }
   });
@@ -188,56 +206,13 @@ var sendMessage = function(message, number) {
   });
 }
 
-var handleResponse = function(userState, response, number) {
-  if (userState === MSG_WELCOME) {
-    DATABASE.query(QUERY_SET_NAME, [response, MSG_NAME_SET, number], function(err){
-      if (err) {
-        console.log("error setting name");
-      } else {
-        sendMessage(MSG_NAME_SET.replace("$USER", response), number);
-      }
-    });
-  } else if (userState === MSG_NAME_SET) {
-    DATABASE.query(QUERY_SET_CHAR_NAME, [response, MSG_CHAR_NAME_SET, number], function(err) {
-      if (err) {
-        console.log("error setting char name");
-      } else {
-        sendMessage(MSG_CHAR_NAME_SET, number);
-      }
-    });
-  } else if (userState === MSG_ELIZA) {
-    handleElizaRequest(response, number);
-  } else {
-    handleGenericRequest(response, number);
-    console.log("strange prompt:" + userState);
-  }
-}
-
-var handleGenericRequest = function(message, number) {
-  message = message.toLowerCase();
-  if (message.toLowerCase() === CMD_ELIZA) {
-    DATABASE.query(QUERY_SET_LAST_PROMPT, [MSG_ELIZA, number], function(err) {
-      sendMessage("Eliza here!", number);
-    });
-  } else if (message === CMD_END_ELIZA) {
-    DATABASE.query(QUERY_SET_LAST_PROMPT, ["", number], function(err) {
-      sendMessage("Bye!", number);
-    });
-  } else {
-    sendMessage("Sorry, didn't understand that.", number);
-  }
-}
-
-var handleElizaRequest = function(message, number) {
-  if (message.toLowerCase() === CMD_END_ELIZA) {
-    handleGenericRequest(message, number);
-    return;
-  }
-  var reply = ELIZA.transform(message);
-  sendMessage(reply, number);
-}
-
 var sanitizePhoneNumber = function(num) {
   num = num.replace(/\D/g, num);
-  return num;
+  while (num.length < 10) {
+    num = num + "0";
+  }
+  if (num.length == 10) {
+    num = "1" + num;
+  }
+  return num.substring(0, 11);
 }
