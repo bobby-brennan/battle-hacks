@@ -1,5 +1,5 @@
 <html>
-<script src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+<script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
 <style>
 .card {
     width: 400px;
@@ -98,24 +98,60 @@ body {
 }
 
 </style>
+<script>
+var purchasedItems = <%- items %>;
+
+$(document).ready(function() {
+console.log("ready!");
+$(".icon").each(function(idx) {
+  console.log("index:" + idx);
+  $(this).click(function() {
+    console.log("click:" + idx);
+    purchaseItem(this, idx);
+  });
+});
+
+$(".icon").each(function(idx) {
+  if (purchasedItems[idx]) {
+    $(this).addClass("purchased");
+  }
+});
+
+$(".icon img").click(function(){console.log("c");});
+})
+
+var purchaseItem = function(elem, itemId) {
+  $(elem).addClass('purchased');
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "/penpal/purchaseItem");
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(JSON.stringify({
+    number: <%= number %>,
+    itemId: itemId
+  }));
+}
+
+</script>
+
+<body>
 <div class="person">
-  <div class="avatar"><img src="icon_11856.png">
+  <div class="avatar"><img src="/penpal/res/icon_11856.png">
   </div>
   <div class="facts">
-    <div class="name"><b>Name</b>: Kerwalkkowinnakiwa "Kerby" Wermenkrvovoritas</div>
-    <div class="occupation"><b>Occupation</b>: Bricklayer, handyperson, assassin</div>
-    <div class="costofliving"><b>Cost of living</b>: $4/day</div>
-    <div class="income"><b>Income</b>: $5/day</div>
-    <div class="savings"><b>Savings</b>: <span class="savings">$10.63</span></div>
+    <div class="name"><b>Name</b>: <%= name %></div>
+    <div class="occupation"><b>Occupation</b>: <%= occupation %></div>
+    <div class="costofliving"><b>Cost of living</b>: $<%= costOfLiving %>/day</div>
+    <div class="income"><b>Income</b>: $<%= income %>/day</div>
+    <div class="savings"><b>Savings</b>: <span class="savings">$<%= savings %></span></div>
   </div>
 </div>
 
 <div class="card">
     <div class="title">Transportation</div>
     <div class="icon_container">
-      <div class="icon"><img src="transportation/busspass/icon.png"></div>
-      <div class="icon purchased"><img src="transportation/bicycle/icon.png"></div>
-      <div class="icon"><img src="transportation/scooter/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/transportation/busspass/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/transportation/bicycle/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/transportation/scooter/icon.png"></div>
     </div>
     <div class="description"></div>
     <div class="notification">!<div class="notification_info">You can afford a car!</div></div>
@@ -123,74 +159,64 @@ body {
 <div class="card">
     <div class="title">Housing</div>
     <div class="icon_container">
-      <div class="icon"><img src="housing/camp/icon.png"></div>
-      <div class="icon"><img src="housing/room/icon.png"></div>
-      <div class="icon"><img src="housing/apartment/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/housing/camp/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/housing/room/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/housing/apartment/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Entertainment</div>
     <div class="icon_container">
-      <div class="icon"><img src="entertainment/radio/icon.png"></div>
-      <div class="icon"><img src="entertainment/tv/icon.png"></div>
-      <div class="icon"><img src="entertainment/computer/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/entertainment/radio/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/entertainment/tv/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/entertainment/computer/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Water and Sanitation</div>
     <div class="icon_container">
-    <div class="icon"><img src="water/bottle/icon.png"></div>
-    <div class="icon"><img src="water/hotwater/icon.png"></div>
-    <div class="icon"><img src="water/toilet/icon.png"></div>
+    <div class="icon"><img src="/penpal/res/water/bottle/icon.png"></div>
+    <div class="icon"><img src="/penpal/res/water/hotwater/icon.png"></div>
+    <div class="icon"><img src="/penpal/res/water/toilet/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Health</div>
     <div class="icon_container">
-      <div class="icon"><img src="medical/doctor/icon.png"></div>
-      <div class="icon"><img src="medical/insurance/icon.png"></div>
-      <div class="icon"><img src="medical/pills/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/medical/doctor/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/medical/insurance/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/medical/pills/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Education</div>
     <div class="icon_container">
-      <div class="icon"><img src="education/stationery/icon.png"></div>
-      <div class="icon"><img src="education/books/icon.png"></div>
-      <div class="icon"><img src="education/tuition/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/education/stationery/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/education/books/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/education/tuition/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Clothing</div>
     <div class="icon_container">
-      <div class="icon"><img src="clothin/summer/icon.png"></div>
-      <div class="icon"><img src="clothin/winter/icon.png"></div>
-      <div class="icon"><img src="clothin/rain/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/clothin/summer/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/clothin/winter/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/clothin/rain/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
 <div class="card">
     <div class="title">Toys</div>
     <div class="icon_container">
-      <div class="icon"><img src="toys/figure/icon.png"></div>
-      <div class="icon"><img src="toys/lego/icon.png"></div>
-      <div class="icon"><img src="toys/rc/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/toys/figure/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/toys/lego/icon.png"></div>
+      <div class="icon"><img src="/penpal/res/toys/rc/icon.png"></div>
     </div>
     <div class="description"></div>
 </div>
-
-<script>
-var savings = 10.63;
-function updateSavings() {
-  savings += 0.01; 
-  $('span.savings').html('$' + savings.toFixed(2));
- window.setTimeout(updateSavings, 2000);
-}
-updateSavings();
-</script>
 </html>
