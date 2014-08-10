@@ -4,6 +4,7 @@ var mysql = require('mysql');
 var URL_PARSER = require('url');
 var BODY_PARSER = require('body-parser');
 var MYSQL = require('mysql');
+var CONVERSATION = require('/home/ec2-user/git/battle-hacks/messages.js');
 
 var ELIZA = require('/home/ec2-user/git/battle-hacks/eliza/elizabot/elizabot.js').get();
 
@@ -27,11 +28,11 @@ var MSG_NAME_SET = "Great to meet you $USER! What do you want to call me?";
 var MSG_CHAR_NAME_SET = "Sounds good!";
 var MSG_ELIZA = "Eliza";
 
-var QUERY_CREATE_USER = "INSERT INTO users (phoneNumber, lastPrompt) VALUES (?, ?)";
-var QUERY_SET_NAME = "UPDATE users SET name=?, lastPrompt=? where phoneNumber=?";
-var QUERY_SET_CHAR_NAME = "UPDATE users SET charName=?, lastPrompt=? where phoneNumber=?";
-var QUERY_LAST_PROMPT = "SELECT lastPrompt FROM users where phoneNumber=?";
-var QUERY_SET_LAST_PROMPT = "UPDATE users SET lastPrompt=? WHERE phoneNumber=?";
+var QUERY_CREATE_USER = "INSERT INTO users (phoneNumber, userState) VALUES (?, ?)";
+var QUERY_SET_NAME = "UPDATE users SET name=?, userState=? where phoneNumber=?";
+var QUERY_SET_CHAR_NAME = "UPDATE users SET charName=?, userState=? where phoneNumber=?";
+var QUERY_LAST_PROMPT = "SELECT userState FROM users where phoneNumber=?";
+var QUERY_SET_LAST_PROMPT = "UPDATE users SET userState=? WHERE phoneNumber=?";
 var QUERY_GET_CHAR_DATA = "SELECT *, CURDATE() - lastUpdate as timeDiff FROM users where phoneNumber=?";
 var QUERY_UPDATE_TIME_SENSITIVE_DATA = "UPDATE users SET charSavings=?, charItems=?, lastUpdate=CURDATE()";
 var QUERY_SET_ITEMS = "UPDATE users SET charItems=? where phoneNumber=?";
@@ -50,25 +51,43 @@ app.post("/initialize", function(req, res) {
   console.log("initialize");
   console.log("  number:" + req.body.number);
   var number = sanitizePhoneNumber(req.body.number);
-  createUser(number);
+  createUser(number, function() {
+    res.send(JSON.stringify({phoneNumber: number}));
+  });
 });
 
 app.get("/incomingSms", function(req, res) {
+  console.log("incoming:");
   var queryData = URL_PARSER.parse(req.url, true).query;
-
   var number = queryData.From.replace("+", "");
 
   DATABASE.query(QUERY_LAST_PROMPT, [number], function(err, rows) {
     if (err || rows.length != 1) {
       createUser(number);
     } else {
-      handleResponse(rows[0].lastPrompt, queryData.Body, number);
+      var next = CONVERSATION.getNextAction(JSON.parse(rows[0].userState), queryData.Body);
+      console.log("next:" + next.message);
+      if (next.cost) {
+        purchaseItem(next.item, next.cost);
+      }
+      DATABASE.query(QUERY_SET_LAST_PROMPT, [JSON.stringify(next), number], function(err) {
+        if (err) {
+          console.log("error updating user state");
+        } else {
+          sendMessage(next.message, number);
+        }
+      });
     }
   });
 });
 
 app.get("/character", function(req, res) {
   var number = URL_PARSER.parse(req.url, true).query.phoneNumber;
+  if (!number) {
+    console.log("getting number from cookies...");
+    res.render('getnumber');
+    return;
+  }
   getCharData(number, function(data) {
     data['number'] = number;
     res.render('character', data);
@@ -144,14 +163,16 @@ var updateTimeSensitiveData = function(oldData, number) {
   return oldData;
 }
 
-var createUser = function(number) {
+var createUser = function(number, callback) {
   console.log("creating user:" + number);
 
   DATABASE.query(QUERY_CREATE_USER, [number, MSG_WELCOME], function(err) {
     if (err) {
       console.log("error:" + err);
+      callback();
     } else {
       sendMessage(MSG_WELCOME, number);
+      callback();
     }
   });
 }
@@ -160,14 +181,15 @@ var sendMessage = function(message, number) {
   TWILIO.sms.messages.create({
     to: number,
     from: "5084030215",
-    body: message,
-  }, function() {
+    body: message.substring(0, 160),
+  }, function(error, message) {
+    console.log("err: " + JSON.stringify(error) + "   msg:" + message);
     console.log("sent message to:" + number);
   });
 }
 
-var handleResponse = function(lastPrompt, response, number) {
-  if (lastPrompt === MSG_WELCOME) {
+var handleResponse = function(userState, response, number) {
+  if (userState === MSG_WELCOME) {
     DATABASE.query(QUERY_SET_NAME, [response, MSG_NAME_SET, number], function(err){
       if (err) {
         console.log("error setting name");
@@ -175,7 +197,7 @@ var handleResponse = function(lastPrompt, response, number) {
         sendMessage(MSG_NAME_SET.replace("$USER", response), number);
       }
     });
-  } else if (lastPrompt === MSG_NAME_SET) {
+  } else if (userState === MSG_NAME_SET) {
     DATABASE.query(QUERY_SET_CHAR_NAME, [response, MSG_CHAR_NAME_SET, number], function(err) {
       if (err) {
         console.log("error setting char name");
@@ -183,11 +205,11 @@ var handleResponse = function(lastPrompt, response, number) {
         sendMessage(MSG_CHAR_NAME_SET, number);
       }
     });
-  } else if (lastPrompt === MSG_ELIZA) {
+  } else if (userState === MSG_ELIZA) {
     handleElizaRequest(response, number);
   } else {
     handleGenericRequest(response, number);
-    console.log("strange prompt:" + lastPrompt);
+    console.log("strange prompt:" + userState);
   }
 }
 

@@ -5,11 +5,20 @@ Penpal
 </title>
 <link rel="stylesheet" type="text/css" href="/penpal/res/styles.css">
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="//cdn.jsdelivr.net/jquery.cookie/1.4.1/jquery.cookie.js"></script>
 <script>
 var sendNumber = function() {
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "/initialize");
+  xhr.open("POST", "/penpal/initialize");
   xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === xhr.DONE) {
+      console.log("resp:" + xhr.responseText);
+      var response = JSON.parse(xhr.responseText);
+      $.cookie("number", response.phoneNumber);
+      window.location.href = "/penpal/character?phoneNumber=" + response.phoneNumber;
+    }
+  }
   xhr.send(JSON.stringify({
     number: $("#numberfield").val(),
   }));
@@ -22,7 +31,7 @@ var sendNumber = function() {
 <div id="welcome">Welcome!</div>
 <div id="getstarted">Enter your phone number to get started</div>
 <div id="number">Number: <input type="text" id="numberfield"></input>
-<button id="submit" height:"100" width:"300" onclick="sendNumber()">Create My Character</button>
+<button id="submit" height:"100" width:"300" onclick="sendNumber()">See My PenPal</button>
 </div>
 </div>
 </body>

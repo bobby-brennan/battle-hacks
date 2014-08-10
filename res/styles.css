@@ -32,8 +32,14 @@ a {
 #numberfield {
   height: 50px;
   width: 300px;
+  border-radius: 3px;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  padding-left: 6px;
+  padding-right: 6px;
+  border: 1px solid #ccc;
+  display: block
 }
-
 #submit{
   height: 50px;
 }
